@@ -52,77 +52,61 @@ if feature == "Stress Prediction (Input Data)":
 # =====================================================
 elif feature == "Face Emotion Detection":
 
-    st.title("Real-Time Face Emotion Detection")
+    st.title("Face Emotion & Stress Detection")
 
-    st.write("Click Start Camera to detect face and emotion.")
+    st.write("Take a photo using camera to detect face and emotion.")
 
-    # Load face detector
     face_cascade = cv2.CascadeClassifier(
         cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
     )
 
-    # Emotion labels
     emotion_labels = ["Happy","Neutral","Sad","Angry"]
 
-    start = st.button("Start Camera")
+    img_file_buffer = st.camera_input("Take a picture")
 
-    if start:
+    if img_file_buffer is not None:
 
-        camera = cv2.VideoCapture(0)
+        # Convert image to OpenCV format
+        bytes_data = img_file_buffer.getvalue()
+        np_img = np.frombuffer(bytes_data, np.uint8)
+        frame = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
 
-        frame_window = st.image([])
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        while True:
+        faces = face_cascade.detectMultiScale(gray,1.3,5)
 
-            ret, frame = camera.read()
+        for (x,y,w,h) in faces:
 
-            if not ret:
-                st.error("Camera not working")
-                break
+            cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
 
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            emotion = np.random.choice(emotion_labels)
 
-            faces = face_cascade.detectMultiScale(gray,1.3,5)
+            if emotion == "Happy":
+                stress = "Low Stress"
+            elif emotion == "Neutral":
+                stress = "Medium Stress"
+            else:
+                stress = "High Stress"
 
-            for (x,y,w,h) in faces:
+            cv2.putText(
+                frame,
+                "Emotion: " + emotion,
+                (x,y-10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                (255,255,0),
+                2
+            )
 
-                cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
+            cv2.putText(
+                frame,
+                "Stress: " + stress,
+                (x,y+h+25),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                (0,0,255),
+                2
+            )
 
-                # Demo emotion prediction
-                emotion = np.random.choice(emotion_labels)
+        st.image(frame, channels="BGR")
 
-                # Emotion → Stress level
-                if emotion == "Happy":
-                    stress = "Low Stress"
-                elif emotion == "Neutral":
-                    stress = "Medium Stress"
-                else:
-                    stress = "High Stress"
-
-                cv2.putText(
-                    frame,
-                    "Emotion: " + emotion,
-                    (x,y-10),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.8,
-                    (255,255,0),
-                    2
-                )
-
-                cv2.putText(
-                    frame,
-                    "Stress: " + stress,
-                    (x,y+h+25),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.8,
-                    (0,0,255),
-                    2
-                )
-
-            frame_window.image(frame,channels="BGR")
-
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
-
-        camera.release()
-        cv2.destroyAllWindows()

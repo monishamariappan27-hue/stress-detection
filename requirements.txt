@@ -3,4 +3,7 @@ pandas
 numpy
 matplotlib
 scikit-learn
+
 nltk
+
+opencv-python-headless
